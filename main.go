@@ -14,7 +14,7 @@ var botSession *discordgo.Session
 func init() {
 	var botToken string
 	var err error
-	botToken = os.Getenv("discord_bot_token")
+	botToken = os.Getenv("scholar_bot")
 
 	botSession, err = discordgo.New("Bot " + botToken)
 	if err != nil {
@@ -24,10 +24,6 @@ func init() {
 
 var (
 	commands = []*discordgo.ApplicationCommand{
-		{
-			Name:        "hello",
-			Description: "A command to say back hello to the user",
-		},
 		{
 			Name:        "gs",
 			Description: "Get first study found on google scholar",
@@ -43,16 +39,6 @@ var (
 	}
 
 	commandHandlers = map[string]func(botSession *discordgo.Session, botInteraction *discordgo.InteractionCreate){
-		"hello": func(botSession *discordgo.Session, botInteraction *discordgo.InteractionCreate) {
-			botSession.InteractionRespond(
-				botInteraction.Interaction,
-				&discordgo.InteractionResponse{
-					Type: discordgo.InteractionResponseChannelMessageWithSource,
-					Data: &discordgo.InteractionResponseData{
-						Content: "Hey there! Congratulations, your first command worked",
-					},
-				})
-		},
 		"gs": func(botSession *discordgo.Session, botInteraction *discordgo.InteractionCreate) {
 			options := botInteraction.ApplicationCommandData().Options
 			optionMap := make(
@@ -64,32 +50,43 @@ var (
 			}
 
 			if query, ok := optionMap["query"]; ok {
-				var studyEmbed apihandlers.StudyEmbed
-				studyEmbed = *apihandlers.QueryFirstGs(query.StringValue())
-				botSession.InteractionRespond(
-					botInteraction.Interaction,
-					&discordgo.InteractionResponse{
-						Type: discordgo.InteractionResponseChannelMessageWithSource,
-						Data: &discordgo.InteractionResponseData{
-							Embeds: []*discordgo.MessageEmbed{
-								{
-									Title:       studyEmbed.Title,
-									Description: studyEmbed.Abstract,
-									URL:         studyEmbed.Url,
-									Author: &discordgo.MessageEmbedAuthor{
-										Name: studyEmbed.Authors,
+				var studyEmbed *apihandlers.StudyEmbed
+				studyEmbed, ok := apihandlers.QueryFirstGs(query.StringValue())
+				if ok {
+					botSession.InteractionRespond(
+						botInteraction.Interaction,
+						&discordgo.InteractionResponse{
+							Type: discordgo.InteractionResponseChannelMessageWithSource,
+							Data: &discordgo.InteractionResponseData{
+								Embeds: []*discordgo.MessageEmbed{
+									{
+										Title:       studyEmbed.Title,
+										Description: studyEmbed.Abstract,
+										URL:         studyEmbed.Url,
+										Author: &discordgo.MessageEmbedAuthor{
+											Name: studyEmbed.Authors,
+										},
 									},
 								},
 							},
-						},
-					})
+						})
+				} else {
+					botSession.InteractionRespond(
+						botInteraction.Interaction,
+						&discordgo.InteractionResponse{
+							Type: discordgo.InteractionResponseChannelMessageWithSource,
+							Data: &discordgo.InteractionResponseData{
+								Content: "An error happened when retrieving the studies from google scholar",
+							},
+						})
+				}
 			} else {
 				botSession.InteractionRespond(
 					botInteraction.Interaction,
 					&discordgo.InteractionResponse{
 						Type: discordgo.InteractionResponseChannelMessageWithSource,
 						Data: &discordgo.InteractionResponseData{
-							Content: "An error happened when retrieving the study",
+							Content: "An error happened when retrieving the query",
 						},
 					})
 			}
