@@ -31,6 +31,14 @@ var (
 		{
 			Name:        "gs",
 			Description: "Get first study found on google scholar",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "query",
+					Description: "search query for study",
+					Required:    true,
+				},
+			},
 		},
 	}
 
@@ -46,14 +54,36 @@ var (
 				})
 		},
 		"gs": func(botSession *discordgo.Session, botInteraction *discordgo.InteractionCreate) {
-			botSession.InteractionRespond(
-				botInteraction.Interaction,
-				&discordgo.InteractionResponse{
-					Type: discordgo.InteractionResponseChannelMessageWithSource,
-					Data: &discordgo.InteractionResponseData{
-						Content: apihandlers.QueryFirstGs("coffee"),
-					},
-				})
+			options := botInteraction.ApplicationCommandData().Options
+			optionMap := make(
+				map[string]*discordgo.ApplicationCommandInteractionDataOption,
+				len(options),
+			)
+			for _, opt := range options {
+				optionMap[opt.Name] = opt
+			}
+
+			if query, ok := optionMap["query"]; ok {
+
+				botSession.InteractionRespond(
+					botInteraction.Interaction,
+					&discordgo.InteractionResponse{
+						Type: discordgo.InteractionResponseChannelMessageWithSource,
+						Data: &discordgo.InteractionResponseData{
+							Content: apihandlers.QueryFirstGs(query.StringValue()),
+						},
+					})
+			} else {
+				botSession.InteractionRespond(
+					botInteraction.Interaction,
+					&discordgo.InteractionResponse{
+						Type: discordgo.InteractionResponseChannelMessageWithSource,
+						Data: &discordgo.InteractionResponseData{
+							Content: "An error happened when retrieving the study",
+						},
+					})
+			}
+
 		},
 	}
 )
