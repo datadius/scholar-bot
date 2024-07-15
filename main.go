@@ -6,6 +6,7 @@ import (
 	"os/signal"
 
 	"github.com/bwmarrin/discordgo"
+	"scholar-bot/apihandlers"
 )
 
 var botSession *discordgo.Session
@@ -27,6 +28,10 @@ var (
 			Name:        "hello",
 			Description: "A command to say back hello to the user",
 		},
+		{
+			Name:        "gs",
+			Description: "Get first study found on google scholar",
+		},
 	}
 
 	commandHandlers = map[string]func(botSession *discordgo.Session, botInteraction *discordgo.InteractionCreate){
@@ -37,6 +42,16 @@ var (
 					Type: discordgo.InteractionResponseChannelMessageWithSource,
 					Data: &discordgo.InteractionResponseData{
 						Content: "Hey there! Congratulations, your first command worked",
+					},
+				})
+		},
+		"gs": func(botSession *discordgo.Session, botInteraction *discordgo.InteractionCreate) {
+			botSession.InteractionRespond(
+				botInteraction.Interaction,
+				&discordgo.InteractionResponse{
+					Type: discordgo.InteractionResponseChannelMessageWithSource,
+					Data: &discordgo.InteractionResponseData{
+						Content: apihandlers.QueryFirstGs("coffee"),
 					},
 				})
 		},
