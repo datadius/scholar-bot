@@ -8,7 +8,14 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-func QueryFirstGs(query string) string {
+type StudyEmbed struct {
+	Title    string
+	Url      string
+	Authors  string
+	Abstract string
+}
+
+func QueryFirstGs(query string) *StudyEmbed {
 	// Define the URL of the Google Scholar search page
 	url := fmt.Sprintf("https://scholar.google.com/scholar?hl=en&q=%s", query)
 
@@ -56,16 +63,10 @@ func QueryFirstGs(query string) string {
 		abstractElem := s.Find("div.gs_rs")
 		abstract := abstractElem.Text()
 
-		return fmt.Sprintf(
-			"Title: %s\n URL: %s\n Authors %s\n Abstract: %s",
-			title,
-			url,
-			authors,
-			abstract,
-		)
+		return &StudyEmbed{Title: title, Url: url, Authors: authors, Abstract: abstract}
 	} else {
 		fmt.Println("Failed to retrieve the page. Status code:", resp.StatusCode)
 	}
 
-	return ""
+	return nil
 }

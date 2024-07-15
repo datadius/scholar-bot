@@ -64,13 +64,23 @@ var (
 			}
 
 			if query, ok := optionMap["query"]; ok {
-
+				var studyEmbed apihandlers.StudyEmbed
+				studyEmbed = *apihandlers.QueryFirstGs(query.StringValue())
 				botSession.InteractionRespond(
 					botInteraction.Interaction,
 					&discordgo.InteractionResponse{
 						Type: discordgo.InteractionResponseChannelMessageWithSource,
 						Data: &discordgo.InteractionResponseData{
-							Content: apihandlers.QueryFirstGs(query.StringValue()),
+							Embeds: []*discordgo.MessageEmbed{
+								{
+									Title:       studyEmbed.Title,
+									Description: studyEmbed.Abstract,
+									URL:         studyEmbed.Url,
+									Author: &discordgo.MessageEmbedAuthor{
+										Name: studyEmbed.Authors,
+									},
+								},
+							},
 						},
 					})
 			} else {
