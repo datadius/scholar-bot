@@ -1,12 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
 
-	"github.com/bwmarrin/discordgo"
 	"scholar-bot/apihandlers"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 var botSession *discordgo.Session
@@ -30,8 +32,20 @@ var (
 			Options: []*discordgo.ApplicationCommandOption{
 				{
 					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "query",
-					Description: "search query for study",
+					Name:        "google",
+					Description: "What study should the bot google",
+					Required:    true,
+				},
+			},
+		},
+		{
+			Name:        "gst10",
+			Description: "Get first 10 studies found on google scholar",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "google",
+					Description: "what should the bot google",
 					Required:    true,
 				},
 			},
@@ -49,8 +63,8 @@ var (
 				optionMap[opt.Name] = opt
 			}
 
-			if query, ok := optionMap["query"]; ok {
-				var studyEmbed *apihandlers.StudyEmbed
+			if query, ok := optionMap["google"]; ok {
+				var studyEmbed *apihandlers.StudyStruct
 				studyEmbed, ok := apihandlers.QueryFirstGs(query.StringValue())
 				if ok {
 					botSession.InteractionRespond(
@@ -68,6 +82,59 @@ var (
 										},
 									},
 								},
+							},
+						})
+				} else {
+					botSession.InteractionRespond(
+						botInteraction.Interaction,
+						&discordgo.InteractionResponse{
+							Type: discordgo.InteractionResponseChannelMessageWithSource,
+							Data: &discordgo.InteractionResponseData{
+								Content: "An error happened when retrieving the studies from google scholar",
+							},
+						})
+				}
+			} else {
+				botSession.InteractionRespond(
+					botInteraction.Interaction,
+					&discordgo.InteractionResponse{
+						Type: discordgo.InteractionResponseChannelMessageWithSource,
+						Data: &discordgo.InteractionResponseData{
+							Content: "An error happened when retrieving the query",
+						},
+					})
+			}
+
+		},
+		"gst10": func(botSession *discordgo.Session, botInteraction *discordgo.InteractionCreate) {
+			options := botInteraction.ApplicationCommandData().Options
+			optionMap := make(
+				map[string]*discordgo.ApplicationCommandInteractionDataOption,
+				len(options),
+			)
+			for _, opt := range options {
+				optionMap[opt.Name] = opt
+			}
+
+			if query, ok := optionMap["google"]; ok {
+				var studySlice *[]apihandlers.StudyStruct
+				studySlice, ok := apihandlers.QueryTopTenGs(query.StringValue())
+				var studyTextList string
+				for _, studyStruct := range *studySlice {
+					studyTextList = studyTextList + fmt.Sprintf(
+						"- [%s](<%s>)\n",
+						studyStruct.Title,
+						studyStruct.Url,
+					)
+				}
+				if ok {
+					botSession.InteractionRespond(
+						botInteraction.Interaction,
+						&discordgo.InteractionResponse{
+							Type: discordgo.InteractionResponseChannelMessageWithSource,
+							Data: &discordgo.InteractionResponseData{
+								Content: studyTextList,
+								Embeds:  nil,
 							},
 						})
 				} else {
