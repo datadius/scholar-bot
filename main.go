@@ -50,6 +50,18 @@ var (
 				},
 			},
 		},
+		{
+			Name:        "pmc",
+			Description: "Get first study found on PubMedCentral",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "google",
+					Description: "What study should the bot google",
+					Required:    true,
+				},
+			},
+		},
 	}
 
 	commandHandlers = map[string]func(botSession *discordgo.Session, botInteraction *discordgo.InteractionCreate){
@@ -135,6 +147,59 @@ var (
 							Data: &discordgo.InteractionResponseData{
 								Content: studyTextList,
 								Embeds:  nil,
+							},
+						})
+				} else {
+					botSession.InteractionRespond(
+						botInteraction.Interaction,
+						&discordgo.InteractionResponse{
+							Type: discordgo.InteractionResponseChannelMessageWithSource,
+							Data: &discordgo.InteractionResponseData{
+								Content: "An error happened when retrieving the studies from google scholar",
+							},
+						})
+				}
+			} else {
+				botSession.InteractionRespond(
+					botInteraction.Interaction,
+					&discordgo.InteractionResponse{
+						Type: discordgo.InteractionResponseChannelMessageWithSource,
+						Data: &discordgo.InteractionResponseData{
+							Content: "An error happened when retrieving the query",
+						},
+					})
+			}
+
+		},
+		"pmc": func(botSession *discordgo.Session, botInteraction *discordgo.InteractionCreate) {
+			options := botInteraction.ApplicationCommandData().Options
+			optionMap := make(
+				map[string]*discordgo.ApplicationCommandInteractionDataOption,
+				len(options),
+			)
+			for _, opt := range options {
+				optionMap[opt.Name] = opt
+			}
+
+			if query, ok := optionMap["google"]; ok {
+				var studyEmbed *apihandlers.StudyStruct
+				studyEmbed, ok := apihandlers.QueryFirstPMC(query.StringValue(), "2015/01/01")
+				if ok {
+					botSession.InteractionRespond(
+						botInteraction.Interaction,
+						&discordgo.InteractionResponse{
+							Type: discordgo.InteractionResponseChannelMessageWithSource,
+							Data: &discordgo.InteractionResponseData{
+								Embeds: []*discordgo.MessageEmbed{
+									{
+										Title:       studyEmbed.Title,
+										Description: studyEmbed.Abstract,
+										URL:         studyEmbed.Url,
+										Author: &discordgo.MessageEmbedAuthor{
+											Name: studyEmbed.Authors,
+										},
+									},
+								},
 							},
 						})
 				} else {
