@@ -24,6 +24,14 @@ func init() {
 	}
 }
 
+func YearInputHelper(optionMap map[string]*discordgo.ApplicationCommandInteractionDataOption) string {
+	if minYear, ok := optionMap["minyear"]; ok {
+		return fmt.Sprint(minYear.IntValue())
+	} else {
+		return "2015"
+	}
+}
+
 var (
 	commands = []*discordgo.ApplicationCommand{
 		{
@@ -35,6 +43,12 @@ var (
 					Name:        "google",
 					Description: "What study should the bot google",
 					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionNumber,
+					Name:        "minyear",
+					Description: "Minimum year for study (default 2015)",
+					Required:    false,
 				},
 			},
 		},
@@ -48,6 +62,12 @@ var (
 					Description: "what should the bot google",
 					Required:    true,
 				},
+				{
+					Type:        discordgo.ApplicationCommandOptionNumber,
+					Name:        "minyear",
+					Description: "Minimum year for study (default 2015)",
+					Required:    false,
+				},
 			},
 		},
 		{
@@ -59,6 +79,12 @@ var (
 					Name:        "google",
 					Description: "What study should the bot google",
 					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionNumber,
+					Name:        "minyear",
+					Description: "Minimum year for study (default 2015)",
+					Required:    false,
 				},
 			},
 		},
@@ -77,7 +103,7 @@ var (
 
 			if query, ok := optionMap["google"]; ok {
 				var studyEmbed *apihandlers.StudyStruct
-				studyEmbed, ok := apihandlers.QueryFirstGs(query.StringValue())
+				studyEmbed, ok := apihandlers.QueryFirstGs(query.StringValue(),YearInputHelper(optionMap))
 				if ok {
 					botSession.InteractionRespond(
 						botInteraction.Interaction,
@@ -114,7 +140,7 @@ var (
 						Type: discordgo.InteractionResponseChannelMessageWithSource,
 						Data: &discordgo.InteractionResponseData{
 							Content: "An error happened when retrieving the query",
-                            Flags: 1 << 6,
+							Flags:   1 << 6,
 						},
 					})
 			}
@@ -132,7 +158,7 @@ var (
 
 			if query, ok := optionMap["google"]; ok {
 				var studySlice *[]apihandlers.StudyStruct
-				studySlice, ok := apihandlers.QueryTopTenGs(query.StringValue())
+				studySlice, ok := apihandlers.QueryTopTenGs(query.StringValue(), YearInputHelper(optionMap))
 				var studyTextList string
 				for _, studyStruct := range *studySlice {
 					studyTextList = studyTextList + fmt.Sprintf(
@@ -158,7 +184,7 @@ var (
 							Type: discordgo.InteractionResponseChannelMessageWithSource,
 							Data: &discordgo.InteractionResponseData{
 								Content: "An error happened when retrieving the studies from google scholar",
-                                Flags: 1 << 6,
+								Flags:   1 << 6,
 							},
 						})
 				}
@@ -169,7 +195,7 @@ var (
 						Type: discordgo.InteractionResponseChannelMessageWithSource,
 						Data: &discordgo.InteractionResponseData{
 							Content: "An error happened when retrieving the query",
-                            Flags: 1 << 6,
+							Flags:   1 << 6,
 						},
 					})
 			}
@@ -187,7 +213,7 @@ var (
 
 			if query, ok := optionMap["google"]; ok {
 				var studyEmbed *apihandlers.StudyStruct
-				studyEmbed, ok := apihandlers.QueryFirstPMC(query.StringValue(), "2015")
+				studyEmbed, ok := apihandlers.QueryFirstPMC(query.StringValue(), YearInputHelper(optionMap))
 				if ok {
 					botSession.InteractionRespond(
 						botInteraction.Interaction,
@@ -213,7 +239,7 @@ var (
 							Type: discordgo.InteractionResponseChannelMessageWithSource,
 							Data: &discordgo.InteractionResponseData{
 								Content: "An error happened when retrieving the studies from PubMed",
-                                Flags: 1 << 6,
+								Flags:   1 << 6,
 							},
 						})
 				}
@@ -224,7 +250,7 @@ var (
 						Type: discordgo.InteractionResponseChannelMessageWithSource,
 						Data: &discordgo.InteractionResponseData{
 							Content: "An error happened when retrieving the query",
-                            Flags: 1 << 6,
+							Flags:   1 << 6,
 						},
 					})
 			}

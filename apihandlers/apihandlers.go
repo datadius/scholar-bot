@@ -18,11 +18,11 @@ type StudyStruct struct {
 	Abstract string
 }
 
-func QueryFirstGs(query string) (*StudyStruct, bool) {
+func QueryFirstGs(query string, minYear string) (*StudyStruct, bool) {
 	// Define the URL of the Google Scholar search page
 	urlQuery := fmt.Sprintf(
-		"https://scholar.google.com/scholar?hl=en&q=%s",
-		url.QueryEscape(query),
+		"https://scholar.google.com/scholar?hl=en&q=%s&as_ylo=%s",
+		url.QueryEscape(query), minYear,
 	)
 	fmt.Println(urlQuery)
 
@@ -81,11 +81,11 @@ func QueryFirstGs(query string) (*StudyStruct, bool) {
 	}
 }
 
-func QueryTopTenGs(query string) (*[]StudyStruct, bool) {
+func QueryTopTenGs(query string, minYear string) (*[]StudyStruct, bool) {
 	// Define the URL of the Google Scholar search page
 	urlQuery := fmt.Sprintf(
-		"https://scholar.google.com/scholar?hl=en&q=%s",
-		url.QueryEscape(query),
+		"https://scholar.google.com/scholar?hl=en&q=%s&as_ylo=%s",
+		url.QueryEscape(query), minYear,
 	)
 	fmt.Println(urlQuery)
 
@@ -354,12 +354,12 @@ type PubmedArticleSet struct {
 	} `xml:"PubmedArticle"`
 }
 
-func QueryFirstPMC(query string, mindate string) (*StudyStruct, bool) {
+func QueryFirstPMC(query string, minYear string) (*StudyStruct, bool) {
 	//https://www.ncbi.nlm.nih.gov/books/NBK25499/#_chapter4_ESearch_
 	urlQuery := fmt.Sprintf(
 		"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=%s&retmode=json&sort=relevance&retmax=1&mindate=%s&maxdate=2024",
 		url.QueryEscape(query),
-		mindate,
+		minYear,
 	)
 	fmt.Println(urlQuery)
 
@@ -447,8 +447,8 @@ func QueryFirstPMC(query string, mindate string) (*StudyStruct, bool) {
 
 			}
 		} else {
-            return nil, false
-        }
+			return nil, false
+		}
 
 	}
 
