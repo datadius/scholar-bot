@@ -446,7 +446,9 @@ func QueryFirstPMC(query string, mindate string) (*StudyStruct, bool) {
 				}, true
 
 			}
-		}
+		} else {
+            return nil, false
+        }
 
 	}
 

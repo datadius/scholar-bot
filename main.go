@@ -183,7 +183,7 @@ var (
 
 			if query, ok := optionMap["google"]; ok {
 				var studyEmbed *apihandlers.StudyStruct
-				studyEmbed, ok := apihandlers.QueryFirstPMC(query.StringValue(), "2015/01/01")
+				studyEmbed, ok := apihandlers.QueryFirstPMC(query.StringValue(), "2015")
 				if ok {
 					botSession.InteractionRespond(
 						botInteraction.Interaction,
@@ -208,7 +208,7 @@ var (
 						&discordgo.InteractionResponse{
 							Type: discordgo.InteractionResponseChannelMessageWithSource,
 							Data: &discordgo.InteractionResponseData{
-								Content: "An error happened when retrieving the studies from google scholar",
+								Content: "An error happened when retrieving the studies from PubMed",
 							},
 						})
 				}
