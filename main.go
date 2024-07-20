@@ -103,6 +103,7 @@ var (
 							Type: discordgo.InteractionResponseChannelMessageWithSource,
 							Data: &discordgo.InteractionResponseData{
 								Content: "An error happened when retrieving the studies from google scholar",
+								Flags:   1 << 6,
 							},
 						})
 				}
@@ -113,6 +114,7 @@ var (
 						Type: discordgo.InteractionResponseChannelMessageWithSource,
 						Data: &discordgo.InteractionResponseData{
 							Content: "An error happened when retrieving the query",
+                            Flags: 1 << 6,
 						},
 					})
 			}
@@ -156,6 +158,7 @@ var (
 							Type: discordgo.InteractionResponseChannelMessageWithSource,
 							Data: &discordgo.InteractionResponseData{
 								Content: "An error happened when retrieving the studies from google scholar",
+                                Flags: 1 << 6,
 							},
 						})
 				}
@@ -166,6 +169,7 @@ var (
 						Type: discordgo.InteractionResponseChannelMessageWithSource,
 						Data: &discordgo.InteractionResponseData{
 							Content: "An error happened when retrieving the query",
+                            Flags: 1 << 6,
 						},
 					})
 			}
@@ -209,6 +213,7 @@ var (
 							Type: discordgo.InteractionResponseChannelMessageWithSource,
 							Data: &discordgo.InteractionResponseData{
 								Content: "An error happened when retrieving the studies from PubMed",
+                                Flags: 1 << 6,
 							},
 						})
 				}
@@ -219,6 +224,7 @@ var (
 						Type: discordgo.InteractionResponseChannelMessageWithSource,
 						Data: &discordgo.InteractionResponseData{
 							Content: "An error happened when retrieving the query",
+                            Flags: 1 << 6,
 						},
 					})
 			}
