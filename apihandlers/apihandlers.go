@@ -396,54 +396,56 @@ func QueryFirstPMC(query string, mindate string) (*StudyStruct, bool) {
 			log.Printf("error translating json response from PMC API %v", err)
 			return nil, false
 		}
-		idStudy := idStudyList.Esearchresult.Idlist[0]
-		urlStudy := fmt.Sprintf(
-			"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=%s",
-			idStudy,
-		)
-		log.Println(urlStudy)
-		req, err := http.NewRequest("GET", urlStudy, nil)
-		if err != nil {
-			log.Printf("failed to form new request to get study details %v", err)
-			return nil, false
-		}
-		headers := map[string]string{
-			"User-Agent":   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36",
-			"Content-Type": "application/xml",
-		}
-		for key, value := range headers {
-			req.Header.Add(key, value)
-		}
-
-		// Check if the request was successful (status code 200)
-		studyResp, err := client.Do(req)
-		if err != nil {
-			log.Printf("error in executing the request %v", err)
-			return nil, false
-		}
-		defer studyResp.Body.Close()
-		log.Println(studyResp.StatusCode)
-		if studyResp.StatusCode == 200 {
-			var pubmedArticleSet PubmedArticleSet
-			err := xml.NewDecoder(studyResp.Body).Decode(&pubmedArticleSet)
+		if len(idStudyList.Esearchresult.Idlist) != 0 {
+			idStudy := idStudyList.Esearchresult.Idlist[0]
+			urlStudy := fmt.Sprintf(
+				"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=%s",
+				idStudy,
+			)
+			log.Println(urlStudy)
+			req, err := http.NewRequest("GET", urlStudy, nil)
 			if err != nil {
-				log.Printf("Error decoding url  data for pmc study %v", err)
+				log.Printf("failed to form new request to get study details %v", err)
 				return nil, false
 			}
-			title := pubmedArticleSet.PubmedArticle.MedlineCitation.Article.ArticleTitle
-			urlArticle := fmt.Sprintf(
-				"https://pubmed.ncbi.nlm.nih.gov/%s/",
-				idStudyList.Esearchresult.Idlist[0],
-			)
-			//handle authors
-			abstract := pubmedArticleSet.PubmedArticle.MedlineCitation.Article.Abstract.AbstractText
-			return &StudyStruct{
-				Title:    title,
-				Url:      urlArticle,
-				Authors:  "",
-				Abstract: abstract,
-			}, true
+			headers := map[string]string{
+				"User-Agent":   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36",
+				"Content-Type": "application/xml",
+			}
+			for key, value := range headers {
+				req.Header.Add(key, value)
+			}
 
+			// Check if the request was successful (status code 200)
+			studyResp, err := client.Do(req)
+			if err != nil {
+				log.Printf("error in executing the request %v", err)
+				return nil, false
+			}
+			defer studyResp.Body.Close()
+			log.Println(studyResp.StatusCode)
+			if studyResp.StatusCode == 200 {
+				var pubmedArticleSet PubmedArticleSet
+				err := xml.NewDecoder(studyResp.Body).Decode(&pubmedArticleSet)
+				if err != nil {
+					log.Printf("Error decoding url  data for pmc study %v", err)
+					return nil, false
+				}
+				title := pubmedArticleSet.PubmedArticle.MedlineCitation.Article.ArticleTitle
+				urlArticle := fmt.Sprintf(
+					"https://pubmed.ncbi.nlm.nih.gov/%s/",
+					idStudyList.Esearchresult.Idlist[0],
+				)
+				//handle authors
+				abstract := pubmedArticleSet.PubmedArticle.MedlineCitation.Article.Abstract.AbstractText
+				return &StudyStruct{
+					Title:    title,
+					Url:      urlArticle,
+					Authors:  "",
+					Abstract: abstract,
+				}, true
+
+			}
 		}
 
 	}
