@@ -26,7 +26,7 @@ func init() {
 
 func YearInputHelper(optionMap map[string]*discordgo.ApplicationCommandInteractionDataOption) string {
 	if minYear, ok := optionMap["minyear"]; ok {
-		return minYear.StringValue()
+		return fmt.Sprint(minYear.IntValue())
 	} else {
 		return "2015"
 	}
@@ -45,7 +45,7 @@ var (
 					Required:    true,
 				},
 				{
-					Type:        discordgo.ApplicationCommandOptionNumber,
+					Type:        discordgo.ApplicationCommandOptionInteger,
 					Name:        "minyear",
 					Description: "Minimum year for study (default 2015)",
 					Required:    false,
@@ -63,7 +63,7 @@ var (
 					Required:    true,
 				},
 				{
-					Type:        discordgo.ApplicationCommandOptionNumber,
+					Type:        discordgo.ApplicationCommandOptionInteger,
 					Name:        "minyear",
 					Description: "Minimum year for study (default 2015)",
 					Required:    false,
@@ -81,7 +81,7 @@ var (
 					Required:    true,
 				},
 				{
-					Type:        discordgo.ApplicationCommandOptionNumber,
+					Type:        discordgo.ApplicationCommandOptionInteger,
 					Name:        "minyear",
 					Description: "Minimum year for study (default 2015)",
 					Required:    false,
