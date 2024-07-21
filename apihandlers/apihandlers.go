@@ -499,52 +499,61 @@ func QueryTopTenPMC(query string, minYear string) (*[]StudyStruct, bool) {
 			return nil, false
 		}
 		if len(idStudyList.Esearchresult.Idlist) != 0 {
-			idStrings := strings.Join(idStudyList.Esearchresult.Idlist, ",")
-			urlLinks := fmt.Sprintf("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pubmed&id=%s&retmode=json&mindate%s&maxdate=2024&cmd=prlinks", idStrings, minYear)
-
-			req, err := http.NewRequest("GET", urlLinks, nil)
+			idStudy := idStudyList.Esearchresult.Idlist[0]
+			urlStudy := fmt.Sprintf(
+				"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=%s",
+				idStudy,
+			)
+			log.Println(urlStudy)
+			req, err := http.NewRequest("GET", urlStudy, nil)
 			if err != nil {
-				log.Printf("error getting the request %v", err)
+				log.Printf("failed to form new request to get study details %v", err)
 				return nil, false
+			}
+			headers := map[string]string{
+				"User-Agent":   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36",
+				"Content-Type": "application/xml",
 			}
 			for key, value := range headers {
 				req.Header.Add(key, value)
 			}
 
 			// Check if the request was successful (status code 200)
-			resp, err := client.Do(req)
+			studyResp, err := client.Do(req)
 			if err != nil {
 				log.Printf("error in executing the request %v", err)
 				return nil, false
 			}
-			defer resp.Body.Close()
-			log.Println(resp.StatusCode)
-
-			if resp.StatusCode == 200 {
-				var studyLinks StudyLinks
-				err := json.NewDecoder(resp.Body).Decode(&studyLinks)
+			defer studyResp.Body.Close()
+			log.Println(studyResp.StatusCode)
+			if studyResp.StatusCode == 200 {
+				var pubmedArticleSet PubmedArticleSet
+				err := xml.NewDecoder(studyResp.Body).Decode(&pubmedArticleSet)
 				if err != nil {
-					log.Printf("error translating json links response from PMC API %v", err)
+					log.Printf("Error decoding url  data for pmc study %v", err)
 					return nil, false
 				}
-				if len(studyLinks.Linksets) != 0 {
-					for _, value := range studyLinks.Linksets[0].Idurllist {
-                        if len(value.Objurls) != 0 {
-                            log.Printf("Id %s URL %s",value.ID,  value.Objurls[0].URL.Value)
-                        }
-					}
-				} else {
-                    return nil, false
-                }
+				title := pubmedArticleSet.PubmedArticle.MedlineCitation.Article.ArticleTitle
+				urlArticle := fmt.Sprintf(
+					"https://pubmed.ncbi.nlm.nih.gov/%s/",
+					idStudyList.Esearchresult.Idlist[0],
+				)
+				//handle authors
+				abstract := pubmedArticleSet.PubmedArticle.MedlineCitation.Article.Abstract.AbstractText
+				return &StudyStruct{
+					Title:    title,
+					Url:      urlArticle,
+					Authors:  "",
+					Abstract: abstract,
+				}, true
 
-			} else {
-				return nil, false
 			}
-
 		} else {
 			return nil, false
 		}
 
+	} else {
+		return nil, false
 	}
 
 	return nil, false
