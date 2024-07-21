@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -446,6 +447,100 @@ func QueryFirstPMC(query string, minYear string) (*StudyStruct, bool) {
 				}, true
 
 			}
+		} else {
+			return nil, false
+		}
+
+	}
+
+	return nil, false
+}
+
+func QueryTopTenPMC(query string, minYear string) (*[]StudyStruct, bool) {
+	//https://www.ncbi.nlm.nih.gov/books/NBK25499/#_chapter4_ESearch_
+	urlQuery := fmt.Sprintf(
+		"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=%s&retmode=json&sort=relevance&retmax=10&mindate=%s&maxdate=2024",
+		url.QueryEscape(query),
+		minYear,
+	)
+	fmt.Println(urlQuery)
+
+	// Define a User-Agent header
+	headers := map[string]string{
+		"User-Agent":   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36",
+		"Content-Type": "application/json",
+	}
+
+	// Send a GET request to the URL with the User-Agent header
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", urlQuery, nil)
+	if err != nil {
+		log.Printf("error getting the request %v", err)
+		return nil, false
+	}
+	for key, value := range headers {
+		req.Header.Add(key, value)
+	}
+
+	// Check if the request was successful (status code 200)
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("error in executing the request %v", err)
+		return nil, false
+	}
+	defer resp.Body.Close()
+	log.Println(resp.StatusCode)
+
+	if resp.StatusCode == 200 {
+		var idStudyList IdStudyList
+		err := json.NewDecoder(resp.Body).Decode(&idStudyList)
+		if err != nil {
+			log.Printf("error translating json response from PMC API %v", err)
+			return nil, false
+		}
+		if len(idStudyList.Esearchresult.Idlist) != 0 {
+			idStrings := strings.Join(idStudyList.Esearchresult.Idlist, ",")
+			urlLinks := fmt.Sprintf("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pubmed&id=%s&retmode=json&mindate%s&maxdate=2024&cmd=prlinks", idStrings, minYear)
+
+			req, err := http.NewRequest("GET", urlLinks, nil)
+			if err != nil {
+				log.Printf("error getting the request %v", err)
+				return nil, false
+			}
+			for key, value := range headers {
+				req.Header.Add(key, value)
+			}
+
+			// Check if the request was successful (status code 200)
+			resp, err := client.Do(req)
+			if err != nil {
+				log.Printf("error in executing the request %v", err)
+				return nil, false
+			}
+			defer resp.Body.Close()
+			log.Println(resp.StatusCode)
+
+			if resp.StatusCode == 200 {
+				var studyLinks StudyLinks
+				err := json.NewDecoder(resp.Body).Decode(&studyLinks)
+				if err != nil {
+					log.Printf("error translating json links response from PMC API %v", err)
+					return nil, false
+				}
+				if len(studyLinks.Linksets) != 0 {
+					for _, value := range studyLinks.Linksets[0].Idurllist {
+                        if len(value.Objurls) != 0 {
+                            log.Printf("Id %s URL %s",value.ID,  value.Objurls[0].URL.Value)
+                        }
+					}
+				} else {
+                    return nil, false
+                }
+
+			} else {
+				return nil, false
+			}
+
 		} else {
 			return nil, false
 		}

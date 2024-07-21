@@ -88,6 +88,24 @@ var (
 				},
 			},
 		},
+		{
+			Name:        "pmct10",
+			Description: "Get top 10 studies found on PubMedCentral",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "google",
+					Description: "What study should the bot google",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "minyear",
+					Description: "Minimum year for study (default 2015)",
+					Required:    false,
+				},
+			},
+		},
 	}
 
 	commandHandlers = map[string]func(botSession *discordgo.Session, botInteraction *discordgo.InteractionCreate){
@@ -239,6 +257,61 @@ var (
 							Type: discordgo.InteractionResponseChannelMessageWithSource,
 							Data: &discordgo.InteractionResponseData{
 								Content: "An error happened when retrieving the studies from PubMed",
+								Flags:   1 << 6,
+							},
+						})
+				}
+			} else {
+				botSession.InteractionRespond(
+					botInteraction.Interaction,
+					&discordgo.InteractionResponse{
+						Type: discordgo.InteractionResponseChannelMessageWithSource,
+						Data: &discordgo.InteractionResponseData{
+							Content: "An error happened when retrieving the query",
+							Flags:   1 << 6,
+						},
+					})
+			}
+
+		},
+		"pmct10": func(botSession *discordgo.Session, botInteraction *discordgo.InteractionCreate) {
+			options := botInteraction.ApplicationCommandData().Options
+			optionMap := make(
+				map[string]*discordgo.ApplicationCommandInteractionDataOption,
+				len(options),
+			)
+			for _, opt := range options {
+				optionMap[opt.Name] = opt
+			}
+
+			if query, ok := optionMap["google"]; ok {
+				var studySlice *[]apihandlers.StudyStruct
+				studySlice, ok := apihandlers.QueryTopTenGs(query.StringValue(), YearInputHelper(optionMap))
+				var studyTextList string
+				for _, studyStruct := range *studySlice {
+					studyTextList = studyTextList + fmt.Sprintf(
+						"- [%s](<%s>)\n",
+						studyStruct.Title,
+						studyStruct.Url,
+					)
+				}
+				if ok {
+					botSession.InteractionRespond(
+						botInteraction.Interaction,
+						&discordgo.InteractionResponse{
+							Type: discordgo.InteractionResponseChannelMessageWithSource,
+							Data: &discordgo.InteractionResponseData{
+								Content: studyTextList,
+								Embeds:  nil,
+							},
+						})
+				} else {
+					botSession.InteractionRespond(
+						botInteraction.Interaction,
+						&discordgo.InteractionResponse{
+							Type: discordgo.InteractionResponseChannelMessageWithSource,
+							Data: &discordgo.InteractionResponseData{
+								Content: "An error happened when retrieving the studies from google scholar",
 								Flags:   1 << 6,
 							},
 						})
