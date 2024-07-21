@@ -26,7 +26,7 @@ func init() {
 
 func YearInputHelper(optionMap map[string]*discordgo.ApplicationCommandInteractionDataOption) string {
 	if minYear, ok := optionMap["minyear"]; ok {
-		return fmt.Sprint(minYear.IntValue())
+		return minYear.StringValue()
 	} else {
 		return "2015"
 	}
