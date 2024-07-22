@@ -1,5 +1,9 @@
 package apihandlers
 
+import (
+	"encoding/xml"
+)
+
 type IdStudyList struct {
 	Header struct {
 		Type    string `json:"type"`
