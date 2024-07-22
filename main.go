@@ -286,7 +286,7 @@ var (
 
 			if query, ok := optionMap["google"]; ok {
 				var studySlice *[]apihandlers.StudyStruct
-				studySlice, ok := apihandlers.QueryTopTenGs(query.StringValue(), YearInputHelper(optionMap))
+				studySlice, ok := apihandlers.QueryTopTenPMC(query.StringValue(), YearInputHelper(optionMap))
 				var studyTextList string
 				for _, studyStruct := range *studySlice {
 					studyTextList = studyTextList + fmt.Sprintf(

@@ -199,7 +199,7 @@ type StudyLinks struct {
 type PubmedArticleSet struct {
 	XMLName       xml.Name `xml:"PubmedArticleSet"`
 	Text          string   `xml:",chardata"`
-	PubmedArticle struct {
+	PubmedArticle []struct {
 		Text            string `xml:",chardata"`
 		MedlineCitation struct {
 			Text   string `xml:",chardata"`
@@ -251,11 +251,6 @@ type PubmedArticleSet struct {
 					EndPage    string `xml:"EndPage"`
 					MedlinePgn string `xml:"MedlinePgn"`
 				} `xml:"Pagination"`
-				ELocationID struct {
-					Text    string `xml:",chardata"`
-					EIdType string `xml:"EIdType,attr"`
-					ValidYN string `xml:"ValidYN,attr"`
-				} `xml:"ELocationID"`
 				Abstract struct {
 					Text                 string `xml:",chardata"`
 					AbstractText         string `xml:"AbstractText"`
@@ -264,7 +259,7 @@ type PubmedArticleSet struct {
 				AuthorList struct {
 					Text       string `xml:",chardata"`
 					CompleteYN string `xml:"CompleteYN,attr"`
-					Author     struct {
+					Author     []struct {
 						Text            string `xml:",chardata"`
 						ValidYN         string `xml:"ValidYN,attr"`
 						LastName        string `xml:"LastName"`
@@ -284,13 +279,6 @@ type PubmedArticleSet struct {
 						UI   string `xml:"UI,attr"`
 					} `xml:"PublicationType"`
 				} `xml:"PublicationTypeList"`
-				ArticleDate struct {
-					Text     string `xml:",chardata"`
-					DateType string `xml:"DateType,attr"`
-					Year     string `xml:"Year"`
-					Month    string `xml:"Month"`
-					Day      string `xml:"Day"`
-				} `xml:"ArticleDate"`
 			} `xml:"Article"`
 			MedlineJournalInfo struct {
 				Text        string `xml:",chardata"`
@@ -299,17 +287,6 @@ type PubmedArticleSet struct {
 				NlmUniqueID string `xml:"NlmUniqueID"`
 				ISSNLinking string `xml:"ISSNLinking"`
 			} `xml:"MedlineJournalInfo"`
-			ChemicalList struct {
-				Text     string `xml:",chardata"`
-				Chemical []struct {
-					Text            string `xml:",chardata"`
-					RegistryNumber  string `xml:"RegistryNumber"`
-					NameOfSubstance struct {
-						Text string `xml:",chardata"`
-						UI   string `xml:"UI,attr"`
-					} `xml:"NameOfSubstance"`
-				} `xml:"Chemical"`
-			} `xml:"ChemicalList"`
 			CitationSubset  string `xml:"CitationSubset"`
 			MeshHeadingList struct {
 				Text        string `xml:",chardata"`
@@ -327,7 +304,6 @@ type PubmedArticleSet struct {
 					} `xml:"QualifierName"`
 				} `xml:"MeshHeading"`
 			} `xml:"MeshHeadingList"`
-			CoiStatement string `xml:"CoiStatement"`
 		} `xml:"MedlineCitation"`
 		PubmedData struct {
 			Text    string `xml:",chardata"`
@@ -432,19 +408,23 @@ func QueryFirstPMC(query string, minYear string) (*StudyStruct, bool) {
 					log.Printf("Error decoding url  data for pmc study %v", err)
 					return nil, false
 				}
-				title := pubmedArticleSet.PubmedArticle.MedlineCitation.Article.ArticleTitle
-				urlArticle := fmt.Sprintf(
-					"https://pubmed.ncbi.nlm.nih.gov/%s/",
-					idStudyList.Esearchresult.Idlist[0],
-				)
-				//handle authors
-				abstract := pubmedArticleSet.PubmedArticle.MedlineCitation.Article.Abstract.AbstractText
-				return &StudyStruct{
-					Title:    title,
-					Url:      urlArticle,
-					Authors:  "",
-					Abstract: abstract,
-				}, true
+				if len(pubmedArticleSet.PubmedArticle) != 0 {
+					title := pubmedArticleSet.PubmedArticle[0].MedlineCitation.Article.ArticleTitle
+					urlArticle := fmt.Sprintf(
+						"https://pubmed.ncbi.nlm.nih.gov/%s/",
+						idStudyList.Esearchresult.Idlist[0],
+					)
+					//handle authors
+					abstract := pubmedArticleSet.PubmedArticle[0].MedlineCitation.Article.Abstract.AbstractText
+					return &StudyStruct{
+						Title:    title,
+						Url:      urlArticle,
+						Authors:  "",
+						Abstract: abstract,
+					}, true
+				} else {
+					return nil, false
+				}
 
 			}
 		} else {
@@ -499,10 +479,10 @@ func QueryTopTenPMC(query string, minYear string) (*[]StudyStruct, bool) {
 			return nil, false
 		}
 		if len(idStudyList.Esearchresult.Idlist) != 0 {
-			idStudy := idStudyList.Esearchresult.Idlist[0]
+			idStudies := strings.Join(idStudyList.Esearchresult.Idlist, ",")
 			urlStudy := fmt.Sprintf(
 				"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=%s",
-				idStudy,
+				idStudies,
 			)
 			log.Println(urlStudy)
 			req, err := http.NewRequest("GET", urlStudy, nil)
@@ -533,20 +513,17 @@ func QueryTopTenPMC(query string, minYear string) (*[]StudyStruct, bool) {
 					log.Printf("Error decoding url  data for pmc study %v", err)
 					return nil, false
 				}
-				title := pubmedArticleSet.PubmedArticle.MedlineCitation.Article.ArticleTitle
-				urlArticle := fmt.Sprintf(
-					"https://pubmed.ncbi.nlm.nih.gov/%s/",
-					idStudyList.Esearchresult.Idlist[0],
-				)
-				//handle authors
-				abstract := pubmedArticleSet.PubmedArticle.MedlineCitation.Article.Abstract.AbstractText
-				return &StudyStruct{
-					Title:    title,
-					Url:      urlArticle,
-					Authors:  "",
-					Abstract: abstract,
-				}, true
+				var studyStructSlice []StudyStruct
+				for _, value := range pubmedArticleSet.PubmedArticle {
+					title := value.MedlineCitation.Article.ArticleTitle
+					urlArticle := fmt.Sprintf(
+						"https://pubmed.ncbi.nlm.nih.gov/%s/",
+						value.MedlineCitation.PMID.Text,
+					)
+					studyStructSlice = append(studyStructSlice, StudyStruct{Title: title, Url: urlArticle, Authors: "", Abstract: ""})
 
+				}
+				return &studyStructSlice, true
 			}
 		} else {
 			return nil, false
